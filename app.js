@@ -89,26 +89,25 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get image data
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
-            // Check if Potrace is available - using the global Potrace object provided by potracelib.min.js
+            // Check if Potrace is available - directly check the global Potrace object
             if (typeof Potrace === 'undefined') {
                 throw new Error("Potrace library not loaded. Please refresh the page and try again.");
             }
             
-            // Create a new instance with the Potrace module
-            const potrace = new Potrace();
+            // Use the simpler Potrace API from the new library
+            const potrace = Potrace.loadImageFromData(imageData);
             
-            // Configure Potrace
+            // Set potrace options
             potrace.setParameter({
-                turdSize: 5,
-                turnPolicy: Potrace.TURNPOLICY_MINORITY,
-                alphaMax: 1,
-                optCurve: true,
-                optTolerance: 0.2,
+                turdsize: 5,
+                turnpolicy: Potrace.TURNPOLICY_MINORITY,
+                optcurve: true,
+                alphamax: 1,
+                opttolerance: 0.2,
                 threshold: 128
             });
             
-            // Process image and generate SVG
-            potrace.loadImageData(imageData);
+            // Generate SVG
             svgContent = potrace.getSVG(1.0);
             
             // Display vector image
@@ -121,9 +120,71 @@ document.addEventListener('DOMContentLoaded', () => {
             downloadBtn.disabled = false;
             statusMessage.textContent = 'Vector conversion complete! Click to download.';
         } catch (error) {
-            statusMessage.textContent = `Vector conversion error: ${error.message}`;
-            vectorImageContainer.innerHTML = '<div class="placeholder">Vector conversion failed</div>';
+            // Fall back to a simple SVG tracing if Potrace fails
+            try {
+                if (error.message.includes("Potrace library not loaded")) {
+                    statusMessage.textContent = 'Using fallback vector conversion...';
+                    await fallbackVectorConversion(corsImage);
+                } else {
+                    throw error;
+                }
+            } catch (fallbackError) {
+                statusMessage.textContent = `Vector conversion error: ${error.message}`;
+                vectorImageContainer.innerHTML = '<div class="placeholder">Vector conversion failed</div>';
+                console.error(error);
+            }
         }
+    }
+    
+    // Fallback vector conversion for when Potrace fails
+    async function fallbackVectorConversion(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        
+        // Draw the image on canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data and create a simple SVG path
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        const width = imageData.width;
+        const height = imageData.height;
+        
+        // Create a simplified SVG by sampling pixels
+        let paths = [];
+        const sampleRate = 8; // Sample every 8 pixels
+        
+        for (let y = 0; y < height; y += sampleRate) {
+            for (let x = 0; x < width; x += sampleRate) {
+                const idx = (y * width + x) * 4;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+                const brightness = (r + g + b) / 3;
+                
+                if (brightness < 128) { // Dark pixels only
+                    const size = Math.max(1, sampleRate / 2);
+                    paths.push(`<circle cx="${x}" cy="${y}" r="${size}" fill="black" />`);
+                }
+            }
+        }
+        
+        // Create the SVG
+        svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+            ${paths.join('\n')}
+        </svg>`;
+        
+        // Display vector image
+        vectorImageContainer.innerHTML = svgContent;
+        const svgElement = vectorImageContainer.querySelector('svg');
+        svgElement.setAttribute('width', '100%');
+        svgElement.setAttribute('height', '100%');
+        
+        // Enable download button
+        downloadBtn.disabled = false;
+        statusMessage.textContent = 'Simple vector conversion complete! Click to download.';
     }
     
     // Download SVG file
