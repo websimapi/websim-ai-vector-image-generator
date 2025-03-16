@@ -89,9 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Get image data
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
+            // Check if Potrace is available
+            if (!window.Potrace) {
+                throw new Error("Potrace library not loaded. Please check your internet connection.");
+            }
+            
             // Configure Potrace
             const potrace = window.Potrace;
-            potrace.setParameter({
+            potrace.setParameters({
                 turdSize: 5,
                 turnPolicy: potrace.TURNPOLICY_MINORITY,
                 alphaMax: 1,
@@ -101,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Process image and generate SVG
-            potrace.loadImageFromData(imageData);
+            potrace.loadImageData(imageData);
             svgContent = potrace.getSVG(1.0);
             
             // Display vector image
