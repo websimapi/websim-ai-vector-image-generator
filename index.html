@@ -1,0 +1,47 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Vector Image Generator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Vector Image Generator</h1>
+        <div class="input-container">
+            <input type="text" id="promptInput" placeholder="Describe the image you want to generate...">
+            <select id="aspectRatio">
+                <option value="1:1">Square (1:1)</option>
+                <option value="16:9">Landscape (16:9)</option>
+                <option value="9:16">Portrait (9:16)</option>
+                <option value="4:3">Standard (4:3)</option>
+                <option value="3:2">Photo (3:2)</option>
+            </select>
+            <button id="generateBtn">Generate</button>
+        </div>
+        
+        <div class="stages-container">
+            <div class="stage" id="stageOriginal">
+                <h2>Original Image</h2>
+                <div class="image-container" id="originalImageContainer">
+                    <div class="placeholder">Your image will appear here</div>
+                </div>
+            </div>
+            
+            <div class="stage" id="stageVector">
+                <h2>Vector Image</h2>
+                <div class="image-container" id="vectorImageContainer">
+                    <div class="placeholder">Vector conversion will appear here</div>
+                </div>
+                <button id="downloadBtn" disabled>Download SVG</button>
+            </div>
+        </div>
+        
+        <div class="status" id="statusMessage"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/potrace@2.1.8/potrace.min.js"></script>
+    <script src="app.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4c6229722a6346bc8eb5cb0e5eae5d41","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
