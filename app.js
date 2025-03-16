@@ -90,15 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
             // Check if Potrace is available
-            if (!window.Potrace) {
-                throw new Error("Potrace library not loaded. Please check your internet connection.");
+            if (typeof Potrace === 'undefined') {
+                throw new Error("Potrace library not loaded. Please refresh the page and try again.");
             }
             
             // Configure Potrace
-            const potrace = window.Potrace;
-            potrace.setParameters({
+            Potrace.setParameters({
                 turdSize: 5,
-                turnPolicy: potrace.TURNPOLICY_MINORITY,
+                turnPolicy: Potrace.TURNPOLICY_MINORITY,
                 alphaMax: 1,
                 optCurve: true,
                 optTolerance: 0.2,
@@ -106,8 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // Process image and generate SVG
-            potrace.loadImageData(imageData);
-            svgContent = potrace.getSVG(1.0);
+            Potrace.loadImageData(imageData);
+            svgContent = Potrace.getSVG(1.0);
             
             // Display vector image
             vectorImageContainer.innerHTML = svgContent;
