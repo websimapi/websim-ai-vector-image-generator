@@ -47,13 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const img = document.createElement('img');
             img.src = originalImageUrl;
             img.alt = prompt;
+            img.crossOrigin = "anonymous"; 
             originalImageContainer.appendChild(img);
             
             // Update status
             statusMessage.textContent = 'Converting to vector...';
             
             // Convert to vector
-            await convertToVector(img);
+            await convertToVector(img, originalImageUrl);
             
         } catch (error) {
             statusMessage.textContent = `Error: ${error.message}`;
@@ -63,55 +64,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Convert image to vector using Potrace
-    async function convertToVector(img) {
-        return new Promise((resolve) => {
-            img.onload = () => {
-                try {
-                    // Create a canvas to process the image
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
-                    
-                    // Draw the image on canvas
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Get image data
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    
-                    // Configure Potrace
-                    const potrace = window.Potrace;
-                    potrace.setParameter({
-                        turdSize: 5,
-                        turnPolicy: potrace.TURNPOLICY_MINORITY,
-                        alphaMax: 1,
-                        optCurve: true,
-                        optTolerance: 0.2,
-                        threshold: 128
-                    });
-                    
-                    // Process image and generate SVG
-                    potrace.loadImageFromData(imageData);
-                    svgContent = potrace.getSVG(1.0);
-                    
-                    // Display vector image
-                    vectorImageContainer.innerHTML = svgContent;
-                    const svgElement = vectorImageContainer.querySelector('svg');
-                    svgElement.setAttribute('width', '100%');
-                    svgElement.setAttribute('height', '100%');
-                    
-                    // Enable download button
-                    downloadBtn.disabled = false;
-                    statusMessage.textContent = 'Vector conversion complete! Click to download.';
-                    
-                    resolve();
-                } catch (error) {
-                    statusMessage.textContent = `Vector conversion error: ${error.message}`;
-                    vectorImageContainer.innerHTML = '<div class="placeholder">Vector conversion failed</div>';
-                    resolve();
-                }
-            };
-        });
+    async function convertToVector(img, imageUrl) {
+        try {
+            // Create a new image with crossOrigin set
+            const corsImage = new Image();
+            corsImage.crossOrigin = "anonymous";
+            
+            // Wait for the image to load safely
+            await new Promise((resolve, reject) => {
+                corsImage.onload = resolve;
+                corsImage.onerror = () => reject(new Error("Failed to load image"));
+                corsImage.src = imageUrl;
+            });
+            
+            // Create a canvas to process the image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = corsImage.naturalWidth;
+            canvas.height = corsImage.naturalHeight;
+            
+            // Draw the image on canvas
+            ctx.drawImage(corsImage, 0, 0);
+            
+            // Get image data
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Configure Potrace
+            const potrace = window.Potrace;
+            potrace.setParameter({
+                turdSize: 5,
+                turnPolicy: potrace.TURNPOLICY_MINORITY,
+                alphaMax: 1,
+                optCurve: true,
+                optTolerance: 0.2,
+                threshold: 128
+            });
+            
+            // Process image and generate SVG
+            potrace.loadImageFromData(imageData);
+            svgContent = potrace.getSVG(1.0);
+            
+            // Display vector image
+            vectorImageContainer.innerHTML = svgContent;
+            const svgElement = vectorImageContainer.querySelector('svg');
+            svgElement.setAttribute('width', '100%');
+            svgElement.setAttribute('height', '100%');
+            
+            // Enable download button
+            downloadBtn.disabled = false;
+            statusMessage.textContent = 'Vector conversion complete! Click to download.';
+        } catch (error) {
+            statusMessage.textContent = `Vector conversion error: ${error.message}`;
+            vectorImageContainer.innerHTML = '<div class="placeholder">Vector conversion failed</div>';
+        }
     }
     
     // Download SVG file
@@ -141,4 +146,3 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMessage.textContent = 'SVG downloaded successfully!';
     }
 });
-
